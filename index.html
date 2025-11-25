@@ -350,7 +350,7 @@
         const gridSize = 6; const maxLevels = 30;
         let currentLevel = 1, rabbitPos = {x:0, y:0}, rabbitStart = {x:0, y:0};
         let walls = [], carrots = [], startCarrots = [], commands = [], isRunning = false, errorLineIndex = -1, simData = [];
-        let isSimEnabled = true;
+        let isSimEnabled = false;
 
         const gridEl = document.getElementById('grid-board');
         const codeEl = document.getElementById('codeList');
@@ -535,3 +535,4 @@
     </script>
 </body>
 </html>
+
