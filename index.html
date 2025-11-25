@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Kayıp Tavşan - V18 (iPhone Fix)</title>
+    <title>Kayıp Tavşan - V19 (Ultimate Fix)</title>
     <style>
         :root {
             --primary-color: #3498db;
@@ -24,15 +24,13 @@
             background-color: var(--bg-color);
             margin: 0;
             padding: 0;
-            /* iPhone'da adres çubuğu sorununu çözen dinamik yükseklik */
-            height: 100vh; 
+            /* iOS Safari için Dinamik Yükseklik */
             height: 100dvh; 
             width: 100vw;
-            overflow: hidden;
+            overflow: hidden; /* Varsayılan olarak kaydırma yok */
             display: flex;
             flex-direction: column;
-            touch-action: manipulation;
-            /* Çentik (Notch) için güvenli alanlar */
+            /* Çentik (Notch) Koruması */
             padding-top: env(safe-area-inset-top);
             padding-bottom: env(safe-area-inset-bottom);
             padding-left: env(safe-area-inset-left);
@@ -41,50 +39,49 @@
 
         /* --- HEADER --- */
         header {
-            flex: 0 0 45px;
+            flex: 0 0 40px;
             display: flex;
             align-items: center;
             justify-content: center;
             background: white;
             box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-            z-index: 10;
-            gap: 15px;
+            z-index: 20;
+            gap: 10px;
             width: 100%;
         }
 
-        h1 { color: #2c3e50; margin: 0; font-size: 1.1rem; }
+        h1 { color: #2c3e50; margin: 0; font-size: 1rem; }
 
         .level-badge {
             background-color: #8e44ad; color: white;
-            padding: 3px 12px; border-radius: 12px;
-            font-weight: bold; font-size: 0.8rem;
+            padding: 2px 8px; border-radius: 10px;
+            font-weight: bold; font-size: 0.75rem;
         }
 
         /* --- ANA OYUN ALANI --- */
         .game-wrapper {
             flex: 1;
             display: flex;
-            flex-direction: column; /* Varsayılan: Mobil Dikey */
+            flex-direction: column; /* Mobil Öncelikli: Alt Alta */
             align-items: center;
             justify-content: center;
-            padding: 10px;
-            gap: 15px;
+            padding: 5px;
+            gap: 10px;
             width: 100%;
             height: 100%;
-            overflow: hidden;
+            overflow-y: auto; /* Sığmazsa kaydır */
         }
 
-        /* --- 1. BÖLÜM: GRID ALANI --- */
+        /* --- 1. GRID ALANI --- */
         #grid-container {
-            flex: 0 0 auto;
+            /* Mobilde ekranın %40'ını kapla */
+            flex: 0 0 40dvh; 
             width: 100%;
             display: flex;
             justify-content: center;
             align-items: center;
             position: relative;
             z-index: 1;
-            /* Mobil Dikey için yükseklik sınırı */
-            max-height: 45vh; 
         }
 
         #grid-board {
@@ -94,13 +91,14 @@
             gap: 4px;
             background-color: var(--board-bg);
             padding: 5px;
-            border-radius: 12px;
+            border-radius: 10px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
             
-            height: 100%; 
+            /* Kare Oranı */
             aspect-ratio: 1 / 1;
+            height: 95%; 
             width: auto; 
-            max-width: 90vw; /* Ekrana sığdır */
+            max-width: 95vw; 
         }
 
         .cell {
@@ -126,7 +124,6 @@
         .item-carrot { z-index: 5; }
         .item-rabbit { z-index: 10; }
 
-        /* Simülasyon */
         .cell.sim-path { box-shadow: inset 0 0 0 3px #3498db; background-color: rgba(52, 152, 219, 0.2); }
         .cell.sim-eat { box-shadow: inset 0 0 0 3px #e67e22; background-color: rgba(230, 126, 34, 0.2); }
         .cell.sim-crash { background-color: rgba(231, 76, 60, 0.6) !important; animation: pulse-red 1s infinite; }
@@ -141,46 +138,39 @@
         }
         .crash-icon { 
             position: absolute; top: 50%; left: 50%; 
-            transform: translate(-50%, -50%);
-            font-size: 1.5em; z-index: 15; 
+            transform: translate(-50%, -50%); font-size: 1.5em; z-index: 15; 
         }
         @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.7); } 100% { box-shadow: 0 0 0 8px rgba(0,0,0,0); } }
 
-        /* --- 2. BÖLÜM: PANEL --- */
+        /* --- 2. PANEL ALANI --- */
         .controls-panel {
-            flex: 1; width: 100%; max-width: 500px; 
-            display: flex; flex-direction: column;
-            background: var(--panel-bg); padding: 10px;
-            border-radius: 16px 16px 0 0; box-shadow: 0 -4px 20px rgba(0,0,0,0.05);
-            gap: 8px; overflow: hidden; min-height: 0;
+            flex: 1; /* Kalan alanı doldur */
+            display: flex;
+            flex-direction: column;
+            background: var(--panel-bg);
+            padding: 8px 12px;
+            border-radius: 16px 16px 0 0;
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.05);
+            gap: 6px;
+            width: 100%;
+            max-width: 500px;
+            align-self: center;
+            min-height: 0; 
         }
 
-        .settings-bar {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 0 5px; margin-bottom: 0;
-        }
-        
-        .toggle-wrapper {
-            display: flex; align-items: center; gap: 8px;
-            font-size: 0.8rem; color: #2c3e50; font-weight: 600;
-        }
-
-        .switch { position: relative; display: inline-block; width: 36px; height: 20px; }
+        /* Toggle Switch */
+        .settings-bar { display: flex; justify-content: space-between; align-items: center; padding: 0 2px; }
+        .toggle-wrapper { display: flex; align-items: center; gap: 6px; font-size: 0.8rem; color: #2c3e50; font-weight: 600; }
+        .switch { position: relative; display: inline-block; width: 34px; height: 18px; }
         .switch input { opacity: 0; width: 0; height: 0; }
-        .slider {
-            position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
-            background-color: #ccc; transition: .4s; border-radius: 22px;
-        }
-        .slider:before {
-            position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px;
-            background-color: white; transition: .4s; border-radius: 50%;
-        }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 22px; }
+        .slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 2px; bottom: 2px; background-color: white; transition: .4s; border-radius: 50%; }
         input:checked + .slider { background-color: #2ecc71; }
         input:checked + .slider:before { transform: translateX(16px); }
 
         #message-area {
             flex: 1; margin-left:10px; display: flex; align-items: center; justify-content: center;
-            font-weight: 600; font-size: 0.8rem; height: 28px;
+            font-weight: 600; font-size: 0.8rem; height: 26px;
             background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 6px; color: #2c3e50;
         }
 
@@ -188,7 +178,7 @@
             flex: 1; background-color: #2c3e50; color: #ecf0f1;
             padding: 6px; overflow-y: auto; border-radius: 6px;
             font-family: monospace; font-size: 0.8rem; border: 2px solid #34495e;
-            min-height: 0;
+            min-height: 40px; /* Mobilde çok küçülmesin */
         }
 
         .code-line { padding: 1px 5px; border-bottom: 1px solid #34495e; }
@@ -200,7 +190,8 @@
 
         button {
             border: none; border-radius: 8px; cursor: pointer;
-            font-weight: 700; height: 44px; box-shadow: 0 3px 0 rgba(0,0,0,0.15);
+            font-weight: 700; height: 42px; 
+            box-shadow: 0 3px 0 rgba(0,0,0,0.15);
             transition: all 0.1s; display: flex; justify-content: center; align-items: center; color: white;
         }
         button:active { transform: translateY(2px); box-shadow: 0 1px 0 rgba(0,0,0,0.15); }
@@ -217,66 +208,51 @@
         .btn-next-level { width: 100%; background-color: #8e44ad; font-size: 0.9rem; height: 40px; gap: 10px; display: none; animation: pulse 1.5s infinite; }
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.02); } 100% { transform: scale(1); } }
 
-        /* ============================================================
-           ÖZEL IPHONE YATAY (LANDSCAPE) DÜZENLEMESİ
-           ============================================================ */
-        
-        /* 1. Sadece genişlik büyükse VE yatay moddaysa (Masaüstü/Tablet) */
-        @media (min-width: 1024px) and (orientation: landscape) {
-            .game-wrapper { flex-direction: row; padding: 20px; gap: 40px; }
-            #grid-container { flex: 1; max-height: none; }
+        /* --- MASAÜSTÜ / LAPTOP (Geniş Ekran) --- */
+        @media (min-width: 1024px) {
+            .game-wrapper { flex-direction: row; padding: 20px; gap: 40px; overflow: hidden; }
+            #grid-container { flex: 1; height: 100%; max-height: none; }
             #grid-board { height: 85vh; width: 85vh; max-width: none; }
             .controls-panel { width: 350px; height: 85vh; flex: 0 0 350px; border-radius: 16px; }
             button { height: 50px; } .action-btn, .btn-eat { height: 45px; }
         }
 
-        /* 2. TELEFON YATAY MODU (Önemli Kısım) */
-        /* Yükseklik küçükse (ör: 400px - 600px arası) ve yataysa */
+        /* --- MOBİL YATAY (Landscape Fix) --- */
+        /* Ekran yüksekliği kısaysa ve yataysa */
         @media (max-height: 600px) and (orientation: landscape) {
-            /* Başlığı gizle, yer aç */
-            header { display: none; }
-
-            /* Yan yana diz */
+            header { display: none; } /* Başlığı gizle */
+            
             .game-wrapper { 
-                flex-direction: row; 
+                flex-direction: row; /* Yan Yana */
+                align-items: center; 
+                justify-content: center;
                 padding: 5px; 
-                gap: 15px;
-                align-items: center;
+                gap: 20px;
             }
 
-            /* Grid Alanı */
             #grid-container { 
-                width: auto; 
                 flex: 1; 
                 height: 100%; 
-                max-height: none; /* Dikey sınırını kaldır */
-                justify-content: flex-end; /* Grid'i sağa yasla ki ortada birleşsinler */
+                width: auto;
+                max-height: 100%; 
             }
 
-            /* Grid'in kendisi: Yüksekliğin %90'ı kadar kare */
             #grid-board { 
-                height: 90vh; 
+                height: 90vh; /* Ekranı doldur */
                 width: 90vh; 
-                max-width: none; /* Genişlik serbest */
+                max-width: none; 
             }
 
-            /* Panel Alanı */
             .controls-panel { 
-                width: 300px; /* Sabit, dar genişlik */
-                height: 90vh; /* Ekrana sığ */
-                overflow-y: auto; /* Sığmazsa kaydır */
-                flex: 0 0 300px; /* Esneme yapma */
+                width: 280px; 
+                height: 90vh; 
+                flex: 0 0 280px;
                 border-radius: 12px;
             }
-
-            /* Butonları küçült */
-            button { height: 35px; font-size: 1.1rem; }
-            .action-btn, .btn-eat { height: 32px; font-size: 0.8rem; }
-            .btn-next-level { height: 35px; }
-            .d-pad-container { gap: 4px; }
             
-            /* Kod ekranına yer aç */
-            .code-display { flex: 1; min-height: 60px; }
+            button { height: 36px; }
+            .action-btn, .btn-eat { height: 34px; }
+            .code-display { min-height: 50px; }
         }
     </style>
 </head>
@@ -458,11 +434,7 @@
 
         function draw() {
             gridEl.innerHTML = '';
-            // FONT BOYUTUNU DOĞRUDAN HÜCRE BOYUTUNA BAĞLADIK
-            // Bu sayede hem mobilde hem masaüstünde ikonlar orantılı olur.
-            const cellWidth = gridEl.clientWidth / gridSize;
-            const fontSize = Math.floor(cellWidth * 0.65); 
-
+            const boxSize = gridEl.clientWidth; const fontSize = Math.floor(boxSize / 9); 
             for(let y=0; y<gridSize; y++) {
                 for(let x=0; x<gridSize; x++) {
                     let div = document.createElement('div'); div.className = 'cell'; div.style.fontSize = `${fontSize}px`;
