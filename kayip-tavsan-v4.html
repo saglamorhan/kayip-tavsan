@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Kayıp Tavşan - V17 (Seçenekli)</title>
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --success-color: #2ecc71;
+            --danger-color: #e74c3c;
+            --warning-color: #f39c12;
+            --bg-color: #f0f2f5;
+            --board-bg: #bdc3c7;
+            --cell-bg: #ecf0f1;
+            --wall-color: #7f8c8d;
+            --panel-bg: #ffffff;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 0;
+            height: 100dvh;
+            width: 100vw;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            touch-action: manipulation;
+        }
+
+        /* --- HEADER --- */
+        header {
+            flex: 0 0 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            z-index: 10;
+            gap: 15px;
+        }
+
+        h1 { color: #2c3e50; margin: 0; font-size: 1.1rem; }
+
+        .level-badge {
+            background-color: #8e44ad; color: white;
+            padding: 3px 12px; border-radius: 12px;
+            font-weight: bold; font-size: 0.8rem;
+        }
+
+        /* --- ANA OYUN ALANI --- */
+        .game-wrapper {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+            gap: 15px;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        #grid-container {
+            flex: 0 0 45dvh;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        #grid-board {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            grid-template-rows: repeat(6, 1fr);
+            gap: 4px;
+            background-color: var(--board-bg);
+            padding: 6px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            height: 95%; 
+            aspect-ratio: 1 / 1;
+            width: auto; 
+            max-width: 90vw; 
+        }
+
+        .cell {
+            background-color: var(--cell-bg);
+            border-radius: 4px; 
+            user-select: none; 
+            position: relative; 
+            overflow: hidden;
+        }
+
+        .cell.wall {
+            background-color: var(--wall-color);
+            border: 1px solid rgba(0,0,0,0.1);
+            background-image: repeating-linear-gradient(45deg, transparent, transparent 5px, rgba(0,0,0,0.1) 5px, rgba(0,0,0,0.1) 10px);
+        }
+
+        .game-item {
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            display: flex; justify-content: center; align-items: center;
+            width: 100%; height: 100%; line-height: 1;
+        }
+        .item-carrot { z-index: 5; }
+        .item-rabbit { z-index: 10; }
+
+        /* Simülasyon */
+        .cell.sim-path { box-shadow: inset 0 0 0 3px #3498db; background-color: rgba(52, 152, 219, 0.2); }
+        .cell.sim-eat { box-shadow: inset 0 0 0 3px #e67e22; background-color: rgba(230, 126, 34, 0.2); }
+        .cell.sim-crash { background-color: rgba(231, 76, 60, 0.6) !important; animation: pulse-red 1s infinite; }
+        
+        .step-badge {
+            position: absolute; top: 2px; left: 2px;
+            background: #34495e; color: white;
+            font-size: 0.6em; width: 1.4em; height: 1.4em;
+            border-radius: 50%;
+            display: flex; justify-content: center; align-items: center;
+            z-index: 20; box-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+        }
+        .crash-icon { 
+            position: absolute; top: 50%; left: 50%; 
+            transform: translate(-50%, -50%);
+            font-size: 1.5em; z-index: 15; 
+        }
+        @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.7); } 100% { box-shadow: 0 0 0 8px rgba(0,0,0,0); } }
+
+        /* --- PANEL --- */
+        .controls-panel {
+            flex: 1; width: 100%; max-width: 500px; 
+            display: flex; flex-direction: column;
+            background: var(--panel-bg); padding: 12px;
+            border-radius: 16px; box-shadow: 0 -4px 20px rgba(0,0,0,0.05);
+            gap: 8px; min-height: 0; align-self: center;
+        }
+
+        /* --- YENİ: AYARLAR ALANI (TOGGLE) --- */
+        .settings-bar {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 0 5px; margin-bottom: 5px;
+        }
+        
+        .toggle-wrapper {
+            display: flex; align-items: center; gap: 8px;
+            font-size: 0.9rem; color: #2c3e50; font-weight: 600;
+        }
+
+        /* Switch CSS */
+        .switch {
+            position: relative; display: inline-block; width: 40px; height: 22px;
+        }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute; cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #ccc; -webkit-transition: .4s; transition: .4s;
+            border-radius: 22px;
+        }
+        .slider:before {
+            position: absolute; content: "";
+            height: 16px; width: 16px; left: 3px; bottom: 3px;
+            background-color: white; -webkit-transition: .4s; transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider { background-color: #2ecc71; }
+        input:focus + .slider { box-shadow: 0 0 1px #2ecc71; }
+        input:checked + .slider:before { -webkit-transform: translateX(18px); -ms-transform: translateX(18px); transform: translateX(18px); }
+
+        #message-area {
+            flex: 0 0 30px; display: flex; align-items: center; justify-content: center;
+            font-weight: 600; font-size: 0.85rem;
+            background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 6px; color: #2c3e50;
+        }
+
+        .code-display {
+            flex: 1; background-color: #2c3e50; color: #ecf0f1;
+            padding: 8px; overflow-y: auto; border-radius: 6px;
+            font-family: monospace; font-size: 0.85rem; border: 2px solid #34495e;
+            min-height: 0;
+        }
+
+        .code-line { padding: 2px 5px; border-bottom: 1px solid #34495e; }
+        .code-line.active { background-color: #f1c40f; color: #2c3e50; font-weight: bold; }
+        .code-line.error { background-color: #e74c3c; color: white; font-weight: bold; border-left: 4px solid #c0392b; }
+
+        .buttons-area { flex: 0 0 auto; display: flex; flex-direction: column; gap: 8px; padding-bottom: 5px; }
+        .d-pad-container { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+
+        button {
+            border: none; border-radius: 8px; cursor: pointer;
+            font-weight: 700; height: 48px; box-shadow: 0 3px 0 rgba(0,0,0,0.15);
+            transition: all 0.1s; display: flex; justify-content: center; align-items: center; color: white;
+        }
+        button:active { transform: translateY(2px); box-shadow: 0 1px 0 rgba(0,0,0,0.15); }
+        button:disabled { opacity: 0.5; cursor: not-allowed; filter: grayscale(100%); transform: none; box-shadow: none; }
+        button svg { width: 24px; height: 24px; stroke-width: 2.5; }
+
+        .btn-arrow { background-color: var(--primary-color); }
+        .btn-eat { grid-column: 1 / -1; background-color: #e67e22; font-size: 0.95rem; height: 40px; gap: 8px; }
+        .action-row { display: flex; gap: 8px; }
+        .action-btn { flex: 1; font-size: 0.9rem; height: 40px; gap: 5px; }
+        .btn-run { background-color: var(--success-color); flex: 1.5; }
+        .btn-undo { background-color: var(--warning-color); color: #2c3e50; }
+        .btn-reset { background-color: var(--danger-color); }
+        .btn-next-level { width: 100%; background-color: #8e44ad; font-size: 1rem; height: 45px; gap: 10px; display: none; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.02); } 100% { transform: scale(1); } }
+
+        /* --- RESPONSIVE --- */
+        @media (min-width: 1024px) and (orientation: landscape) {
+            .game-wrapper { flex-direction: row; padding: 20px; gap: 40px; }
+            #grid-container { flex: 1; height: 100%; max-height: none; }
+            #grid-board { height: 85vh; width: 85vh; max-width: none; }
+            .controls-panel { width: 350px; height: 85vh; flex: 0 0 350px; border-radius: 16px; }
+            button { height: 50px; } .action-btn, .btn-eat { height: 45px; }
+        }
+
+        @media (max-height: 600px) and (orientation: landscape) {
+            header { display: none; }
+            .game-wrapper { flex-direction: row; padding: 5px; }
+            #grid-container { width: auto; flex: 1; height: 100%; }
+            #grid-board { height: 95vh; width: 95vh; }
+            .controls-panel { width: 280px; height: 95vh; overflow-y: auto; }
+            button { height: 35px; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>🐰 Kayıp Tavşan</h1>
+        <div class="level-badge" id="level-indicator">Bölüm 1 / 30</div>
+    </header>
+
+    <div class="game-wrapper">
+        <div id="grid-container">
+            <div id="grid-board"></div>
+        </div>
+
+        <div class="controls-panel">
+            
+            <div class="settings-bar">
+                <div class="toggle-wrapper">
+                    <label class="switch">
+                        <input type="checkbox" id="simToggle" checked onchange="toggleSimulation()">
+                        <span class="slider round"></span>
+                    </label>
+                    <span>Simülasyon</span>
+                </div>
+                <div id="message-area" style="flex:1; margin-left:10px;">Komutları gir...</div>
+            </div>
+
+            <div class="code-display" id="codeList"></div>
+
+            <div class="buttons-area">
+                <div class="d-pad-container">
+                    <div></div>
+                    <button class="btn-arrow" onclick="addCommand('Yukarı')" aria-label="Yukarı">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18" /></svg>
+                    </button>
+                    <div></div>
+                    
+                    <button class="btn-arrow" onclick="addCommand('Sol')" aria-label="Sol">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+                    </button>
+                    <button class="btn-arrow" onclick="addCommand('Aşağı')" aria-label="Aşağı">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3" /></svg>
+                    </button>
+                    <button class="btn-arrow" onclick="addCommand('Sağ')" aria-label="Sağ">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+                    </button>
+                    
+                    <button class="btn-eat" onclick="addCommand('Ye')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
+                        Havucu Ye
+                    </button>
+                </div>
+
+                <div class="action-row">
+                    <button class="action-btn btn-run" id="btnRun" onclick="runCode()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style="width:18px"><path stroke-linecap="round" stroke-linejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        Çalıştır
+                    </button>
+                    <button class="action-btn btn-undo" id="btnUndo" onclick="undoLastCommand()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style="width:18px"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" /></svg>
+                        Sil
+                    </button>
+                    <button class="action-btn btn-reset" id="btnReset" onclick="resetAll()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style="width:18px"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                    </button>
+                </div>
+                
+                <button class="btn-next-level" id="btnNext" onclick="nextLevel()">
+                    Sonraki Bölüm ➡️
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const SoundFX = {
+            play: (type, freq, dur) => {
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+                osc.type = type; osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+                osc.connect(gain); gain.connect(audioCtx.destination);
+                osc.start(); osc.stop(audioCtx.currentTime + dur);
+            },
+            jump: () => SoundFX.play('triangle', 300, 0.1),
+            eat: () => { SoundFX.play('sine', 800, 0.1); setTimeout(()=>SoundFX.play('sine', 1200, 0.1), 100); },
+            undo: () => SoundFX.play('square', 200, 0.05),
+            error: () => SoundFX.play('sawtooth', 100, 0.3),
+            win: () => { [523, 659, 783, 1046].forEach((f, i) => setTimeout(() => SoundFX.play('sine', f, 0.2), i*100)); }
+        };
+
+        const gridSize = 6; const maxLevels = 30;
+        let currentLevel = 1, rabbitPos = {x:0, y:0}, rabbitStart = {x:0, y:0};
+        let walls = [], carrots = [], startCarrots = [], commands = [], isRunning = false, errorLineIndex = -1, simData = [];
+        let isSimEnabled = true;
+
+        const gridEl = document.getElementById('grid-board');
+        const codeEl = document.getElementById('codeList');
+        const msgEl = document.getElementById('message-area');
+        const levelEl = document.getElementById('level-indicator');
+        const btns = { run: document.getElementById('btnRun'), reset: document.getElementById('btnReset'), undo: document.getElementById('btnUndo'), next: document.getElementById('btnNext'), arrows: document.querySelectorAll('.btn-arrow, .btn-eat') };
+
+        function getRandomInt(max) { return Math.floor(Math.random() * max); }
+
+        function toggleSimulation() {
+            isSimEnabled = document.getElementById('simToggle').checked;
+            draw();
+        }
+
+        function calculateSimulation() {
+            simData = []; let simX = rabbitStart.x, simY = rabbitStart.y;
+            if(isRunning) return;
+            for(let i=0; i<commands.length; i++) {
+                let cmd = commands[i], nextX = simX, nextY = simY, isMove = false;
+                if (cmd === 'Yukarı') { nextY--; isMove = true; } else if (cmd === 'Aşağı') { nextY++; isMove = true; }
+                else if (cmd === 'Sol') { nextX--; isMove = true; } else if (cmd === 'Sağ') { nextX++; isMove = true; }
+                if (nextX < 0 || nextX >= gridSize || nextY < 0 || nextY >= gridSize || walls.some(w => w.x === nextX && w.y === nextY)) {
+                    if(isMove) { simData.push({ x: nextX, y: nextY, step: i + 1, type: 'crash' }); break; }
+                } else {
+                    simX = nextX; simY = nextY;
+                    simData.push({ x: simX, y: simY, step: i + 1, type: isMove ? 'path' : 'eat' });
+                }
+            }
+        }
+
+        function generateLevel(levelNum) {
+            let valid = false;
+            while(!valid) {
+                let wallCount = levelNum <= 3 ? 0 : Math.min(14, Math.floor((levelNum-1)/2));
+                let carrotCount = Math.min(5, 1 + Math.floor(levelNum/8));
+                let rx = getRandomInt(gridSize), ry = getRandomInt(gridSize);
+                let tempRabbit = {x:rx, y:ry}, tempWalls = [];
+                while(tempWalls.length < wallCount) {
+                    let wx = getRandomInt(gridSize), wy = getRandomInt(gridSize);
+                    if((wx !== rx || wy !== ry) && !tempWalls.some(w=>w.x===wx && w.y===wy)) tempWalls.push({x:wx, y:wy});
+                }
+                let queue = [tempRabbit], visited = new Set([`${rx},${ry}`]), reachable = [];
+                while(queue.length) {
+                    let curr = queue.shift(); reachable.push(curr);
+                    [{x:0,y:-1},{x:0,y:1},{x:-1,y:0},{x:1,y:0}].forEach(d => {
+                        let nx = curr.x+d.x, ny = curr.y+d.y;
+                        if(nx>=0 && nx<gridSize && ny>=0 && ny<gridSize && !tempWalls.some(w=>w.x===nx && w.y===ny) && !visited.has(`${nx},${ny}`)) {
+                            visited.add(`${nx},${ny}`); queue.push({x:nx, y:ny});
+                        }
+                    });
+                }
+                if(reachable.length >= carrotCount + 1) {
+                    let tempCarrots = [], candidates = reachable.filter(p => p.x !== rx || p.y !== ry);
+                    if(candidates.length >= carrotCount) {
+                        for(let i=0; i<carrotCount; i++) {
+                            let idx = getRandomInt(candidates.length); tempCarrots.push(candidates[idx]); candidates.splice(idx, 1);
+                        }
+                        valid = true; rabbitStart = {...tempRabbit}; rabbitPos = {...tempRabbit}; walls = tempWalls;
+                        startCarrots = JSON.parse(JSON.stringify(tempCarrots)); currentCarrots = JSON.parse(JSON.stringify(tempCarrots));
+                    }
+                }
+            }
+        }
+
+        function initLevel(level) {
+            if(level > maxLevels) { alert("Oyun Bitti!"); level = 1; }
+            currentLevel = level; generateLevel(level); resetAll();
+        }
+
+        function visualReset() {
+            rabbitPos = {...rabbitStart}; currentCarrots = JSON.parse(JSON.stringify(startCarrots));
+            isRunning = false; levelEl.textContent = `Bölüm ${currentLevel} / ${maxLevels}`;
+            if (errorLineIndex === -1) { msgEl.textContent = "Komutları gir..."; msgEl.style.backgroundColor="#f8f9fa"; msgEl.style.color="#2c3e50"; }
+            btns.next.style.display = 'none'; toggleAllBtns(false);
+            calculateSimulation(); draw(); updateCode();
+        }
+
+        function resetAll() { commands = []; errorLineIndex = -1; simData = []; visualReset(); }
+        function toggleAllBtns(disabled) { btns.run.disabled = disabled; btns.reset.disabled = disabled; btns.undo.disabled = disabled; btns.arrows.forEach(btn => btn.disabled = disabled); }
+        function nextLevel() { initLevel(currentLevel + 1); }
+
+        function draw() {
+            gridEl.innerHTML = '';
+            const boxSize = gridEl.clientWidth; const fontSize = Math.floor(boxSize / 9); 
+            for(let y=0; y<gridSize; y++) {
+                for(let x=0; x<gridSize; x++) {
+                    let div = document.createElement('div'); div.className = 'cell'; div.style.fontSize = `${fontSize}px`;
+                    if(walls.some(w=>w.x===x && w.y===y)) div.classList.add('wall');
+                    else if(currentCarrots.some(c=>c.x===x && c.y===y)) {
+                        let carrotSpan = document.createElement('span'); carrotSpan.className = 'game-item item-carrot'; carrotSpan.textContent = '🥕'; div.appendChild(carrotSpan);
+                    }
+                    // SIMULATION DRAWER
+                    if (!isRunning && isSimEnabled) {
+                        let stepsHere = simData.filter(s => s.x === x && s.y === y);
+                        if (stepsHere.length > 0) {
+                            let lastStep = stepsHere[stepsHere.length - 1];
+                            if (lastStep.type === 'crash') {
+                                div.classList.add('sim-crash');
+                                let icon = document.createElement('span'); icon.className = 'crash-icon'; icon.textContent = '⚠️'; div.appendChild(icon);
+                            } else {
+                                if (lastStep.type === 'eat') div.classList.add('sim-eat'); else div.classList.add('sim-path');
+                            }
+                            let badge = document.createElement('div'); badge.className = 'step-badge'; badge.textContent = lastStep.step; div.appendChild(badge);
+                        }
+                    }
+                    if(x===rabbitPos.x && y===rabbitPos.y) {
+                         let rabbitSpan = document.createElement('span'); rabbitSpan.className = 'game-item item-rabbit'; rabbitSpan.textContent = '🐰'; div.appendChild(rabbitSpan);
+                    }
+                    gridEl.appendChild(div);
+                }
+            }
+        }
+
+        function addCommand(cmd) {
+            if(isRunning) return;
+            if(errorLineIndex !== -1) { errorLineIndex = -1; msgEl.textContent = "Komutları gir..."; msgEl.style.backgroundColor="#f8f9fa"; msgEl.style.color="#2c3e50"; }
+            if(audioCtx.state === 'suspended') audioCtx.resume();
+            commands.push(cmd); calculateSimulation(); updateCode(); draw(); setTimeout(() => codeEl.scrollTop = codeEl.scrollHeight, 10);
+        }
+
+        function undoLastCommand() {
+            if(isRunning || commands.length===0) return;
+            if ((commands.length - 1) === errorLineIndex) errorLineIndex = -1; else if ((commands.length - 1) < errorLineIndex) errorLineIndex = -1;
+            commands.pop(); calculateSimulation(); updateCode(); draw(); SoundFX.undo();
+        }
+
+        function updateCode() {
+            codeEl.innerHTML = '';
+            if(!commands.length) { codeEl.innerHTML = '<div style="color:#aaa; text-align:center; margin-top:20px;">Henüz komut yok...</div>'; return; }
+            commands.forEach((c, i) => {
+                let div = document.createElement('div'); div.className = 'code-line'; div.id = `line-${i}`;
+                if (i === errorLineIndex) div.classList.add('error');
+                div.textContent = `${i+1}. ${c}`; codeEl.appendChild(div);
+            });
+        }
+
+        async function runCode() {
+            if(!commands.length) return;
+            
+            // Sadece Simülasyon Açıksa Ön Kontrol Yap
+            if (isSimEnabled) {
+                let crashStep = simData.find(s => s.type === 'crash');
+                if (crashStep) {
+                    errorLineIndex = crashStep.step - 1; updateCode(); msgEl.textContent = "Hata! Simülasyonda çarpışma var."; msgEl.style.backgroundColor = "#ffebee"; msgEl.style.color = "#c0392b"; SoundFX.error(); return;
+                }
+            }
+
+            errorLineIndex = -1; isRunning = true; toggleAllBtns(true);
+            msgEl.textContent = "Çalışıyor..."; msgEl.style.backgroundColor = "#f8f9fa"; msgEl.style.color = "#2c3e50";
+            rabbitPos = {...rabbitStart}; currentCarrots = JSON.parse(JSON.stringify(startCarrots)); draw();
+            await new Promise(r => setTimeout(r, 400));
+            for(let i=0; i<commands.length; i++) {
+                document.querySelectorAll('.code-line').forEach(e => e.classList.remove('active'));
+                let line = document.getElementById(`line-${i}`); if(line) { line.classList.add('active'); line.scrollIntoView({block: 'center', behavior:'smooth'}); }
+                let success = await step(commands[i]);
+                if(!success) {
+                    SoundFX.error(); errorLineIndex = i; msgEl.textContent = "Hata! Düzeltmen gerek."; msgEl.style.backgroundColor = "#ffebee"; msgEl.style.color = "#c0392b";
+                    await new Promise(r => setTimeout(r, 1000)); visualReset(); if(line) line.classList.add('error'); return; 
+                }
+                await new Promise(r => setTimeout(r, 500));
+            }
+            if(!currentCarrots.length) {
+                msgEl.textContent = "Tebrikler!"; msgEl.style.backgroundColor = "#e8f8f5"; msgEl.style.color = "#27ae60"; SoundFX.win(); btns.next.style.display = 'block'; btns.reset.disabled = false;
+            } else {
+                msgEl.textContent = "Havuçlar bitmedi!"; msgEl.style.backgroundColor = "#fcf3cf"; msgEl.style.color = "#d35400"; SoundFX.error(); await new Promise(r => setTimeout(r, 1000)); visualReset();
+            }
+        }
+
+        async function step(cmd) {
+            let nx = rabbitPos.x, ny = rabbitPos.y;
+            if(cmd === 'Ye') {
+                let idx = currentCarrots.findIndex(c => c.x===nx && c.y===ny);
+                if(idx > -1) { currentCarrots.splice(idx, 1); SoundFX.eat(); draw(); return true; } else return false; 
+            }
+            if(cmd==='Yukarı') ny--; else if(cmd==='Aşağı') ny++; else if(cmd==='Sol') nx--; else if(cmd==='Sağ') nx++;
+            if(nx<0 || nx>=gridSize || ny<0 || ny>=gridSize || walls.some(w=>w.x===nx && w.y===ny)) return false; 
+            SoundFX.jump(); rabbitPos = {x:nx, y:ny}; draw(); return true;
+        }
+
+        window.addEventListener('resize', () => { requestAnimationFrame(draw); });
+        initLevel(1);
+    </script>
+</body>
+</html>
