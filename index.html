@@ -2,8 +2,8 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Kayıp Tavşan - V17 (Seçenekli)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Kayıp Tavşan - V18 (iPhone Fix)</title>
     <style>
         :root {
             --primary-color: #3498db;
@@ -24,12 +24,19 @@
             background-color: var(--bg-color);
             margin: 0;
             padding: 0;
-            height: 100dvh;
+            /* iPhone'da adres çubuğu sorununu çözen dinamik yükseklik */
+            height: 100vh; 
+            height: 100dvh; 
             width: 100vw;
             overflow: hidden;
             display: flex;
             flex-direction: column;
             touch-action: manipulation;
+            /* Çentik (Notch) için güvenli alanlar */
+            padding-top: env(safe-area-inset-top);
+            padding-bottom: env(safe-area-inset-bottom);
+            padding-left: env(safe-area-inset-left);
+            padding-right: env(safe-area-inset-right);
         }
 
         /* --- HEADER --- */
@@ -42,6 +49,7 @@
             box-shadow: 0 2px 5px rgba(0,0,0,0.05);
             z-index: 10;
             gap: 15px;
+            width: 100%;
         }
 
         h1 { color: #2c3e50; margin: 0; font-size: 1.1rem; }
@@ -56,7 +64,7 @@
         .game-wrapper {
             flex: 1;
             display: flex;
-            flex-direction: column;
+            flex-direction: column; /* Varsayılan: Mobil Dikey */
             align-items: center;
             justify-content: center;
             padding: 10px;
@@ -66,14 +74,17 @@
             overflow: hidden;
         }
 
+        /* --- 1. BÖLÜM: GRID ALANI --- */
         #grid-container {
-            flex: 0 0 45dvh;
+            flex: 0 0 auto;
             width: 100%;
             display: flex;
             justify-content: center;
             align-items: center;
             position: relative;
             z-index: 1;
+            /* Mobil Dikey için yükseklik sınırı */
+            max-height: 45vh; 
         }
 
         #grid-board {
@@ -82,13 +93,14 @@
             grid-template-rows: repeat(6, 1fr);
             gap: 4px;
             background-color: var(--board-bg);
-            padding: 6px;
+            padding: 5px;
             border-radius: 12px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            height: 95%; 
+            
+            height: 100%; 
             aspect-ratio: 1 / 1;
             width: auto; 
-            max-width: 90vw; 
+            max-width: 90vw; /* Ekrana sığdır */
         }
 
         .cell {
@@ -134,102 +146,137 @@
         }
         @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.7); } 100% { box-shadow: 0 0 0 8px rgba(0,0,0,0); } }
 
-        /* --- PANEL --- */
+        /* --- 2. BÖLÜM: PANEL --- */
         .controls-panel {
             flex: 1; width: 100%; max-width: 500px; 
             display: flex; flex-direction: column;
-            background: var(--panel-bg); padding: 12px;
-            border-radius: 16px; box-shadow: 0 -4px 20px rgba(0,0,0,0.05);
-            gap: 8px; min-height: 0; align-self: center;
+            background: var(--panel-bg); padding: 10px;
+            border-radius: 16px 16px 0 0; box-shadow: 0 -4px 20px rgba(0,0,0,0.05);
+            gap: 8px; overflow: hidden; min-height: 0;
         }
 
-        /* --- YENİ: AYARLAR ALANI (TOGGLE) --- */
         .settings-bar {
             display: flex; justify-content: space-between; align-items: center;
-            padding: 0 5px; margin-bottom: 5px;
+            padding: 0 5px; margin-bottom: 0;
         }
         
         .toggle-wrapper {
             display: flex; align-items: center; gap: 8px;
-            font-size: 0.9rem; color: #2c3e50; font-weight: 600;
+            font-size: 0.8rem; color: #2c3e50; font-weight: 600;
         }
 
-        /* Switch CSS */
-        .switch {
-            position: relative; display: inline-block; width: 40px; height: 22px;
-        }
+        .switch { position: relative; display: inline-block; width: 36px; height: 20px; }
         .switch input { opacity: 0; width: 0; height: 0; }
         .slider {
-            position: absolute; cursor: pointer;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background-color: #ccc; -webkit-transition: .4s; transition: .4s;
-            border-radius: 22px;
+            position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #ccc; transition: .4s; border-radius: 22px;
         }
         .slider:before {
-            position: absolute; content: "";
-            height: 16px; width: 16px; left: 3px; bottom: 3px;
-            background-color: white; -webkit-transition: .4s; transition: .4s;
-            border-radius: 50%;
+            position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px;
+            background-color: white; transition: .4s; border-radius: 50%;
         }
         input:checked + .slider { background-color: #2ecc71; }
-        input:focus + .slider { box-shadow: 0 0 1px #2ecc71; }
-        input:checked + .slider:before { -webkit-transform: translateX(18px); -ms-transform: translateX(18px); transform: translateX(18px); }
+        input:checked + .slider:before { transform: translateX(16px); }
 
         #message-area {
-            flex: 0 0 30px; display: flex; align-items: center; justify-content: center;
-            font-weight: 600; font-size: 0.85rem;
+            flex: 1; margin-left:10px; display: flex; align-items: center; justify-content: center;
+            font-weight: 600; font-size: 0.8rem; height: 28px;
             background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 6px; color: #2c3e50;
         }
 
         .code-display {
             flex: 1; background-color: #2c3e50; color: #ecf0f1;
-            padding: 8px; overflow-y: auto; border-radius: 6px;
-            font-family: monospace; font-size: 0.85rem; border: 2px solid #34495e;
+            padding: 6px; overflow-y: auto; border-radius: 6px;
+            font-family: monospace; font-size: 0.8rem; border: 2px solid #34495e;
             min-height: 0;
         }
 
-        .code-line { padding: 2px 5px; border-bottom: 1px solid #34495e; }
+        .code-line { padding: 1px 5px; border-bottom: 1px solid #34495e; }
         .code-line.active { background-color: #f1c40f; color: #2c3e50; font-weight: bold; }
         .code-line.error { background-color: #e74c3c; color: white; font-weight: bold; border-left: 4px solid #c0392b; }
 
-        .buttons-area { flex: 0 0 auto; display: flex; flex-direction: column; gap: 8px; padding-bottom: 5px; }
-        .d-pad-container { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+        .buttons-area { flex: 0 0 auto; display: flex; flex-direction: column; gap: 6px; padding-bottom: 5px; }
+        .d-pad-container { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; }
 
         button {
             border: none; border-radius: 8px; cursor: pointer;
-            font-weight: 700; height: 48px; box-shadow: 0 3px 0 rgba(0,0,0,0.15);
+            font-weight: 700; height: 44px; box-shadow: 0 3px 0 rgba(0,0,0,0.15);
             transition: all 0.1s; display: flex; justify-content: center; align-items: center; color: white;
         }
         button:active { transform: translateY(2px); box-shadow: 0 1px 0 rgba(0,0,0,0.15); }
         button:disabled { opacity: 0.5; cursor: not-allowed; filter: grayscale(100%); transform: none; box-shadow: none; }
-        button svg { width: 24px; height: 24px; stroke-width: 2.5; }
+        button svg { width: 20px; height: 20px; stroke-width: 2.5; }
 
         .btn-arrow { background-color: var(--primary-color); }
-        .btn-eat { grid-column: 1 / -1; background-color: #e67e22; font-size: 0.95rem; height: 40px; gap: 8px; }
-        .action-row { display: flex; gap: 8px; }
-        .action-btn { flex: 1; font-size: 0.9rem; height: 40px; gap: 5px; }
+        .btn-eat { grid-column: 1 / -1; background-color: #e67e22; font-size: 0.9rem; height: 38px; gap: 8px; }
+        .action-row { display: flex; gap: 6px; }
+        .action-btn { flex: 1; font-size: 0.85rem; height: 38px; gap: 4px; }
         .btn-run { background-color: var(--success-color); flex: 1.5; }
         .btn-undo { background-color: var(--warning-color); color: #2c3e50; }
         .btn-reset { background-color: var(--danger-color); }
-        .btn-next-level { width: 100%; background-color: #8e44ad; font-size: 1rem; height: 45px; gap: 10px; display: none; animation: pulse 1.5s infinite; }
+        .btn-next-level { width: 100%; background-color: #8e44ad; font-size: 0.9rem; height: 40px; gap: 10px; display: none; animation: pulse 1.5s infinite; }
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.02); } 100% { transform: scale(1); } }
 
-        /* --- RESPONSIVE --- */
+        /* ============================================================
+           ÖZEL IPHONE YATAY (LANDSCAPE) DÜZENLEMESİ
+           ============================================================ */
+        
+        /* 1. Sadece genişlik büyükse VE yatay moddaysa (Masaüstü/Tablet) */
         @media (min-width: 1024px) and (orientation: landscape) {
             .game-wrapper { flex-direction: row; padding: 20px; gap: 40px; }
-            #grid-container { flex: 1; height: 100%; max-height: none; }
+            #grid-container { flex: 1; max-height: none; }
             #grid-board { height: 85vh; width: 85vh; max-width: none; }
             .controls-panel { width: 350px; height: 85vh; flex: 0 0 350px; border-radius: 16px; }
             button { height: 50px; } .action-btn, .btn-eat { height: 45px; }
         }
 
+        /* 2. TELEFON YATAY MODU (Önemli Kısım) */
+        /* Yükseklik küçükse (ör: 400px - 600px arası) ve yataysa */
         @media (max-height: 600px) and (orientation: landscape) {
+            /* Başlığı gizle, yer aç */
             header { display: none; }
-            .game-wrapper { flex-direction: row; padding: 5px; }
-            #grid-container { width: auto; flex: 1; height: 100%; }
-            #grid-board { height: 95vh; width: 95vh; }
-            .controls-panel { width: 280px; height: 95vh; overflow-y: auto; }
-            button { height: 35px; }
+
+            /* Yan yana diz */
+            .game-wrapper { 
+                flex-direction: row; 
+                padding: 5px; 
+                gap: 15px;
+                align-items: center;
+            }
+
+            /* Grid Alanı */
+            #grid-container { 
+                width: auto; 
+                flex: 1; 
+                height: 100%; 
+                max-height: none; /* Dikey sınırını kaldır */
+                justify-content: flex-end; /* Grid'i sağa yasla ki ortada birleşsinler */
+            }
+
+            /* Grid'in kendisi: Yüksekliğin %90'ı kadar kare */
+            #grid-board { 
+                height: 90vh; 
+                width: 90vh; 
+                max-width: none; /* Genişlik serbest */
+            }
+
+            /* Panel Alanı */
+            .controls-panel { 
+                width: 300px; /* Sabit, dar genişlik */
+                height: 90vh; /* Ekrana sığ */
+                overflow-y: auto; /* Sığmazsa kaydır */
+                flex: 0 0 300px; /* Esneme yapma */
+                border-radius: 12px;
+            }
+
+            /* Butonları küçült */
+            button { height: 35px; font-size: 1.1rem; }
+            .action-btn, .btn-eat { height: 32px; font-size: 0.8rem; }
+            .btn-next-level { height: 35px; }
+            .d-pad-container { gap: 4px; }
+            
+            /* Kod ekranına yer aç */
+            .code-display { flex: 1; min-height: 60px; }
         }
     </style>
 </head>
@@ -255,7 +302,7 @@
                     </label>
                     <span>Simülasyon</span>
                 </div>
-                <div id="message-area" style="flex:1; margin-left:10px;">Komutları gir...</div>
+                <div id="message-area">Komutları gir...</div>
             </div>
 
             <div class="code-display" id="codeList"></div>
@@ -286,15 +333,15 @@
 
                 <div class="action-row">
                     <button class="action-btn btn-run" id="btnRun" onclick="runCode()">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style="width:18px"><path stroke-linecap="round" stroke-linejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style="width:16px"><path stroke-linecap="round" stroke-linejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                         Çalıştır
                     </button>
                     <button class="action-btn btn-undo" id="btnUndo" onclick="undoLastCommand()">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style="width:18px"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" /></svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style="width:16px"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" /></svg>
                         Sil
                     </button>
                     <button class="action-btn btn-reset" id="btnReset" onclick="resetAll()">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style="width:18px"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style="width:16px"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                     </button>
                 </div>
                 
@@ -411,7 +458,11 @@
 
         function draw() {
             gridEl.innerHTML = '';
-            const boxSize = gridEl.clientWidth; const fontSize = Math.floor(boxSize / 9); 
+            // FONT BOYUTUNU DOĞRUDAN HÜCRE BOYUTUNA BAĞLADIK
+            // Bu sayede hem mobilde hem masaüstünde ikonlar orantılı olur.
+            const cellWidth = gridEl.clientWidth / gridSize;
+            const fontSize = Math.floor(cellWidth * 0.65); 
+
             for(let y=0; y<gridSize; y++) {
                 for(let x=0; x<gridSize; x++) {
                     let div = document.createElement('div'); div.className = 'cell'; div.style.fontSize = `${fontSize}px`;
